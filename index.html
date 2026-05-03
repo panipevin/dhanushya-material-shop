@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f7f6; }
+        .navbar { background: #2c3e50; display: flex; justify-content: space-around; position: sticky; top: 0; z-index: 100; }
+        .navbar a { color: white; padding: 14px 10px; text-decoration: none; text-align: center; font-size: 13px; flex: 1; }
+        .navbar a.active { background: #3498db; }
+        .logout { background: #c0392b !important; }
+
+        #sessionLock { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(44, 62, 80, 0.95); display: flex; 
+            align-items: center; justify-content: center; z-index: 1000; 
+        }
+        .lock-box { background: white; padding: 30px; border-radius: 12px; text-align: center; width: 85%; max-width: 300px; }
+
+        .container { padding: 15px; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        .billing-info-header {
+            display: flex;
+            justify-content: space-between;
+            background: #ecf0f1;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 5px solid #3498db;
+        }
+        .info-item { display: flex; flex-direction: column; }
+        .info-item .label { font-size: 10px; text-transform: uppercase; color: #7f8c8d; font-weight: bold; margin-bottom: 2px; }
+        .info-item .value { font-size: 13px; color: #2c3e50; font-weight: bold; }
+
+        .header-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 13px; font-weight: bold; color: #34495e; padding: 0 5px; }
+        
+        .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 5px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .btn-add { background: #27ae60; color: white; }
+        .btn-submit { background: #3498db; color: white; margin-top: 20px; font-size: 16px; }
+        
+        .total-section { text-align: right; margin: 15px 0; font-weight: bold; color: #e67e22; font-size: 1.2em; border-top: 2px solid #eee; padding-top: 10px; }
+        
+        .calc-box { background: #e8f4fd; padding: 10px; border-radius: 8px; border-top: 1px solid #3498db; margin-bottom: 15px; }
+        .balance-text { font-size: 1.2em; font-weight: bold; padding-top: 10px; }
+
+        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .payment-box { background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
+        label { font-size: 11px; color: #7f8c8d; font-weight: bold; display: block; margin-bottom: 5px; }
+
+        #qrModal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); display: none; 
+            flex-direction: column; align-items: center; justify-content: center; z-index: 2000; 
+        }
+        .qr-card { background: white; padding: 20px; border-radius: 15px; text-align: center; }
+    </style>
+</head>
+<body onload="checkSession(); startClock();">
+
+<div id="sessionLock" style="display:none;">
+    <div class="lock-box">
+        <h3>Dhanushya Shop</h3>
+        <p>Morning Opening</p>
+        <label>Set Entry Time</label>
+        <input type="time" id="morningTime">
+        <button class="btn btn-submit" id="startDayBtn" onclick="startSession()">Start Day</button>
+    </div>
+</div>
+
+<div id="qrModal">
+    <div class="qr-card">
+        <h4 style="margin-top:0">Scan to Pay: ₹<span id="qrDisplayAmt">0</span></h4>
+        <img id="qrImg" src="" style="width:200px; height:200px;">
+        <button class="btn logout" onclick="document.getElementById('qrModal').style.display='none'">Close</button>
+    </div>
+</div>
+
+<nav class="navbar">
+    <a href="#" class="active">Billing</a>
+    <a href="#">Reports</a>
+    <a href="#">History</a>
+    <a href="#" class="logout" onclick="logout()">Exit</a>
+</nav>
+
+<div class="container">
+    <div class="card">
+        <div class="billing-info-header">
+            <div class="info-item">
+                <span class="label">Progress:</span>
+                <span id="dayDisplay" class="value" style="color: #27ae60;">Day 1</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Date:</span>
+                <span id="displayDate" class="value"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">Total Bill:</span>
+                <span id="totalBillNo" class="value">...</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Curr Bill:</span>
+                <span id="dailyBillNo" class="value">1</span>
+            </div>
+        </div>
+
+        <div class="header-row">
+            <div>Live Status:</div>
+            <div id="liveClock" style="color: #e74c3c;"></div>
+        </div>
+        
+        <div id="itemList">
+            <div class="item-row">
+                <div><label>Item</label><input type="text" class="item-name" placeholder="Name"></div>
+                <div><label>Qty</label><input type="number" class="item-qty" value="1" oninput="calc(this)"></div>
+                <div><label>Rate</label><input type="number" class="item-rate" oninput="calc(this)"></div>
+                <div><label>Total</label><input type="number" class="item-total" readonly></div>
+            </div>
+        </div>
+
+        <button class="btn btn-add" onclick="addRow()">+ Add Next Item</button>
+
+        <div class="total-section">Grand Total: ₹<span id="grandTotal">0</span></div>
+
+        <div class="calc-box">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Received Amount</label>
+                    <input type="number" id="receivedAmt" placeholder="0" oninput="calculateBalance()">
+                </div>
+                <div>
+                    <label>Remaining Balance</label>
+                    <div id="balanceAmt" class="balance-text">₹0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-grid">
+            <div class="payment-box">
+                <label>💵 Cash Recorded</label>
+                <input type="number" id="cashAmt" placeholder="0" oninput="validatePayment()">
+            </div>
+            <div class="payment-box">
+                <label>📱 G-Pay Recorded</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="number" id="gpayAmt" placeholder="0" oninput="validatePayment()">
+                    <button onclick="generateQR()" style="background:#6c5ce7; color:white; border:none; border-radius:6px; padding:0 8px;">QR</button>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-submit" id="submitBtn" onclick="submitToSheet()">Submit Bill</button>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzq8iKWw9vm8NHhf9sbNFEDEXC5C25MqiI_DuskpAV8aaSq6wAShi8gH2i3xcrEXU5kPQ/exec";
+
+    function updateDayCount() {
+        const startDate = new Date(2026, 4, 3); 
+        const today = new Date();
+        const diffTime = Math.abs(today - startDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+        document.getElementById('dayDisplay').innerText = "Day " + diffDays;
+    }
+
+    function startClock() {
+        setInterval(() => {
+            document.getElementById('liveClock').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        }, 1000);
+        document.getElementById('displayDate').innerText = new Date().toLocaleDateString();
+        updateDayCount();
+        fetchTotalBillNo();
+    }
+
+    function checkSession() {
+        if (!localStorage.getItem('shop_entry_time')) {
+            document.getElementById('sessionLock').style.display = 'flex';
+            document.getElementById('morningTime').value = new Date().toTimeString().slice(0,5);
+            localStorage.setItem('daily_bill_count', 1);
+        }
+        document.getElementById('dailyBillNo').innerText = localStorage.getItem('daily_bill_count') || 1;
+    }
+
+    // UPDATED: Start Session now tells Google Sheets to fill B2 and H2 immediately
+    function startSession() {
+        const timeInput = document.getElementById('morningTime').value;
+        const startBtn = document.getElementById('startDayBtn');
+        
+        if(timeInput) {
+            startBtn.disabled = true;
+            startBtn.innerText = "Initializing...";
+
+            const formattedTime = new Date('1970-01-01T' + timeInput + 'Z')
+                .toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' });
+
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({
+                    action: "startDay",
+                    entryTime: formattedTime
+                })
+            }).then(() => {
+                localStorage.setItem('shop_entry_time', formattedTime);
+                localStorage.setItem('daily_bill_count', 1);
+                document.getElementById('sessionLock').style.display = 'none';
+                location.reload(); 
+            }).catch(err => {
+                alert("Error starting day: " + err);
+                startBtn.disabled = false;
+                startBtn.innerText = "Start Day";
+            });
+        }
+    }
+
+    async function logout() {
+        const closerName = prompt("Who is closing the shop? (Enter Name):");
+        if (closerName === null) return; 
+        if (closerName.trim() === "") {
+            alert("Name is required to exit!");
+            return;
+        }
+
+        if(confirm(`Exit and close session as ${closerName}?`)) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerText = "Closing Session...";
+            submitBtn.disabled = true;
+
+            const payload = {
+                action: "closeSession",
+                closedBy: closerName,
+                entryTime: localStorage.getItem('shop_entry_time'),
+                exitTime: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: true})
+            };
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    body: JSON.stringify(payload)
+                });
+                
+                localStorage.removeItem('shop_entry_time');
+                localStorage.removeItem('daily_bill_count');
+                alert("Session Closed. Goodbye!");
+                location.reload();
+            } catch (err) {
+                alert("Error closing session: " + err);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Bill";
+            }
+        }
+    }
+
+    async function fetchTotalBillNo() {
+        try {
+            const resp = await fetch(SCRIPT_URL + "?action=getLastBill");
+            const val = await resp.text();
+            document.getElementById('totalBillNo').innerText = parseInt(val) + 1;
+        } catch(e) {
+            document.getElementById('totalBillNo').innerText = "Err";
+        }
+    }
+
+    function addRow() {
+        const list = document.getElementById('itemList');
+        const newRow = list.firstElementChild.cloneNode(true);
+        newRow.querySelectorAll('input').forEach(i => i.value = (i.className === 'item-qty' ? 1 : ''));
+        list.appendChild(newRow);
+    }
+
+    function calc(el) {
+        const row = el.closest('.item-row');
+        const q = parseFloat(row.querySelector('.item-qty').value) || 0;
+        const r = parseFloat(row.querySelector('.item-rate').value) || 0;
+        row.querySelector('.item-total').value = (q * r).toFixed(2);
+        
+        let rawTotal = 0;
+        document.querySelectorAll('.item-total').forEach(t => rawTotal += parseFloat(t.value || 0));
+        
+        const roundedTotal = Math.ceil(rawTotal);
+        document.getElementById('grandTotal').innerText = roundedTotal;
+        
+        calculateBalance();
+        validatePayment();
+    }
+
+    function calculateBalance() {
+        const total = parseFloat(document.getElementById('grandTotal').innerText) || 0;
+        const received = parseFloat(document.getElementById('receivedAmt').value) || 0;
+        const balance = total - received;
+        const balEl = document.getElementById('balanceAmt');
+        balEl.innerText = "₹" + balance;
+
+        if (balance > 0) { balEl.style.color = "#e74c3c"; } 
+        else if (balance < 0) { balEl.style.color = "#27ae60"; } 
+        else { balEl.style.color = "#34495e"; }
+    }
+
+    function validatePayment() {
+        const grand = parseFloat(document.getElementById('grandTotal').innerText) || 0;
+        const cash = parseFloat(document.getElementById('cashAmt').value) || 0;
+        const gpay = parseFloat(document.getElementById('gpayAmt').value) || 0;
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (Math.abs((cash + gpay) - grand) > 0.01) {
+            submitBtn.style.background = "#95a5a6";
+            submitBtn.innerText = "Mismatch (₹" + (cash+gpay).toFixed(0) + ")";
+            submitBtn.disabled = true;
+        } else {
+            submitBtn.style.background = "#3498db";
+            submitBtn.innerText = "Submit Bill";
+            submitBtn.disabled = false;
+        }
+    }
+
+    function generateQR() {
+        const amount = document.getElementById('gpayAmt').value;
+        const upiID = "YOUR_UPI_ID@okicici"; 
+        if (amount > 0) {
+            const upiString = `upi://pay?pa=${upiID}&pn=Dhanushya%20Shop&am=${amount}&cu=INR`;
+            document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
+            document.getElementById('qrDisplayAmt').innerText = amount;
+            document.getElementById('qrModal').style.display = 'flex';
+        }
+    }
+
+    function submitToSheet() {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Saving...";
+
+        const items = [];
+        document.querySelectorAll('.item-row').forEach(row => {
+            const name = row.querySelector('.item-name').value;
+            if (name) {
+                items.push({
+                    name: name,
+                    qty: row.querySelector('.item-qty').value,
+                    rate: row.querySelector('.item-rate').value,
+                    total: row.querySelector('.item-total').value
+                });
+            }
+        });
+
+        const payload = {
+            items: items,
+            cash: document.getElementById('cashAmt').value || 0,
+            gpay: document.getElementById('gpayAmt').value || 0,
+            entryTime: localStorage.getItem('shop_entry_time'),
+            dailyBillNo: localStorage.getItem('daily_bill_count')
+        };
+
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors", 
+            cache: "no-cache",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            let currentDaily = parseInt(localStorage.getItem('daily_bill_count')) || 1;
+            localStorage.setItem('daily_bill_count', currentDaily + 1);
+            alert("Bill sent successfully!");
+            location.reload(); 
+        })
+        .catch(err => {
+            alert("Error: " + err);
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Submit Bill";
+        });
+    }
+</script>
+</body>
+</html>
