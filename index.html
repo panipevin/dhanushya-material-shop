@@ -3,87 +3,225 @@
 <head>
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f7f6; }
-        .navbar { background: #2c3e50; display: flex; justify-content: space-around; position: sticky; top: 0; z-index: 100; }
-        .navbar a { color: white; padding: 14px 10px; text-decoration: none; text-align: center; font-size: 13px; flex: 1; }
-        .navbar a.active { background: #3498db; }
-        .logout { background: #c0392b !important; }
+    
+    <!-- App Icons for Homescreen & Desktop -->
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="manifest" href="manifest.json">
+    <title>DHANUSHYA MATERIAL SHOP</title>
 
+    <style>
+        /* Base Styles & Unique Responsive Background */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            background-color: #f0f4f7;
+            /* Unique Soft Grid Pattern */
+            background-image: radial-gradient(#d1d9e6 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Adjusted Responsive Navbar */
+        .navbar { 
+            background: #2c3e50; 
+            display: flex; 
+            justify-content: center; /* Centers the inner container */
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            width: 100%;
+        }
+        
+        /* Inner container to match billing card width */
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 900px; /* Matches .container max-width */
+        }
+
+        .nav-branding {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            color: white;
+            width: 100%;
+            justify-content: center;
+            background: #1a252f;
+        }
+
+        .nav-logo {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 2px solid #3498db;
+        }
+
+        .shop-name {
+            font-weight: bold;
+            font-size: 15px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+        }
+
+        .nav-links a { 
+            color: white; 
+            padding: 14px 10px; 
+            text-decoration: none; 
+            text-align: center; 
+            font-size: 13px; 
+            flex: 1; 
+            transition: 0.3s;
+        }
+
+        .nav-links a.active { background: #3498db; font-weight: bold; }
+        .logout { background: #c0392b !important; }
+        .logout:hover { background: #a93226 !important; }
+
+        /* Login Box Styles */
         #sessionLock { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(44, 62, 80, 0.95); display: flex; 
+            background: rgba(44, 62, 80, 0.96); display: flex; 
             align-items: center; justify-content: center; z-index: 1000; 
         }
-        .lock-box { background: white; padding: 30px; border-radius: 12px; text-align: center; width: 85%; max-width: 300px; }
+        .lock-box { background: white; padding: 40px 30px; border-radius: 16px; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .lock-box img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid #3498db; margin-bottom: 20px; }
 
-        .container { padding: 15px; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        /* Main Container */
+        .container { 
+            padding: 20px 15px; 
+            width: 100%; 
+            max-width: 900px; 
+            margin: 0 auto;
+            box-sizing: border-box;
+            flex-grow: 1;
+        }
+
+        /* Billing Card with Soft Elevation */
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(44, 62, 80, 0.12); 
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
         
         .billing-info-header {
             display: flex;
             justify-content: space-between;
-            background: #ecf0f1;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 5px solid #3498db;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 6px solid #3498db;
+            flex-wrap: wrap;
+            gap: 12px;
         }
-        .info-item { display: flex; flex-direction: column; }
-        .info-item .label { font-size: 10px; text-transform: uppercase; color: #7f8c8d; font-weight: bold; margin-bottom: 2px; }
-        .info-item .value { font-size: 13px; color: #2c3e50; font-weight: bold; }
+        
+        .info-item { display: flex; flex-direction: column; min-width: 90px; }
+        .info-item .label { font-size: 11px; text-transform: uppercase; color: #95a5a6; font-weight: bold; margin-bottom: 4px; }
+        .info-item .value { font-size: 14px; color: #2c3e50; font-weight: 800; }
 
-        .header-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 13px; font-weight: bold; color: #34495e; padding: 0 5px; }
+        .header-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; font-weight: bold; color: #34495e; padding: 0 5px; }
         
-        .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 5px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        .item-row { 
+            display: grid; 
+            grid-template-columns: 2.5fr 1fr 1fr 1.2fr; 
+            gap: 10px; 
+            margin-bottom: 12px; 
+            border-bottom: 1px dashed #dee2e6; 
+            padding-bottom: 12px; 
+        }
         
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
-        .btn-add { background: #27ae60; color: white; }
-        .btn-submit { background: #3498db; color: white; margin-top: 20px; font-size: 16px; }
+        input { padding: 12px; border: 1px solid #ced4da; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; transition: 0.2s; }
+        input:focus { border-color: #3498db; outline: none; background: #fdfdfe; }
         
-        .total-section { text-align: right; margin: 15px 0; font-weight: bold; color: #e67e22; font-size: 1.2em; border-top: 2px solid #eee; padding-top: 10px; }
+        .btn { padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.2s; }
+        .btn-add { background: #27ae60; color: white; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2); }
+        .btn-add:hover { background: #219150; }
+        .btn-submit { background: #3498db; color: white; margin-top: 25px; font-size: 17px; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3); }
+        .btn-submit:hover { background: #2980b9; transform: translateY(-1px); }
+        .btn-submit:disabled { background: #bdc3c7; box-shadow: none; transform: none; }
         
-        .calc-box { background: #e8f4fd; padding: 10px; border-radius: 8px; border-top: 1px solid #3498db; margin-bottom: 15px; }
-        .balance-text { font-size: 1.2em; font-weight: bold; padding-top: 10px; }
+        .total-section { text-align: right; margin: 20px 0; font-weight: 900; color: #d35400; font-size: 1.4em; border-top: 2px solid #f1f1f1; padding-top: 15px; }
+        
+        .calc-box { background: #f0f7ff; padding: 15px; border-radius: 12px; border: 1px solid #d6e9f9; margin-bottom: 20px; }
+        .balance-text { font-size: 1.3em; font-weight: 900; padding-top: 10px; }
 
-        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .payment-box { background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
-        label { font-size: 11px; color: #7f8c8d; font-weight: bold; display: block; margin-bottom: 5px; }
+        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+        .payment-box { background: #ffffff; padding: 12px; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
+        label { font-size: 11px; color: #7f8c8d; font-weight: bold; display: block; margin-bottom: 6px; }
 
         #qrModal { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.85); display: none; 
             flex-direction: column; align-items: center; justify-content: center; z-index: 2000; 
         }
-        .qr-card { background: white; padding: 20px; border-radius: 15px; text-align: center; }
+        .qr-card { background: white; padding: 25px; border-radius: 20px; text-align: center; }
+
+        /* MacBook / Tablet View Adjustments */
+        @media (min-width: 768px) {
+            .nav-container { 
+                flex-direction: row; 
+                justify-content: space-between; 
+                height: 60px; 
+                padding: 0 15px; 
+            }
+            .nav-branding { width: auto; background: transparent; padding: 0; }
+            .nav-links { width: auto; }
+            .nav-links a { flex: none; padding: 0 20px; height: 60px; line-height: 60px; }
+            .shop-name { font-size: 17px; }
+            .container { padding: 40px 20px; }
+        }
     </style>
 </head>
 <body onload="checkSession(); startClock();">
 
 <div id="sessionLock" style="display:none;">
     <div class="lock-box">
-        <h3>Dhanushya Shop</h3>
-        <p>Morning Opening</p>
-        <label>Set Entry Time</label>
-        <input type="time" id="morningTime">
+        <img src="logo.png" alt="App Logo">
+        <h2 style="margin: 0; color: #2c3e50; font-size: 20px;">DHANUSHYA MATERIAL SHOP</h2>
+        <p style="margin-top: 5px; font-size: 13px; color: #7f8c8d;">Morning Opening</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <label style="display:block; margin-bottom:10px; font-size:11px; font-weight:bold; color:#7f8c8d;">SELECT ENTRY TIME</label>
+        <input type="time" id="morningTime" style="text-align: center; font-size: 16px;">
         <button class="btn btn-submit" id="startDayBtn" onclick="startSession()">Start Day</button>
     </div>
 </div>
 
 <div id="qrModal">
     <div class="qr-card">
-        <h4 style="margin-top:0">Scan to Pay: ₹<span id="qrDisplayAmt">0</span></h4>
-        <img id="qrImg" src="" style="width:200px; height:200px;">
+        <h4 style="margin-top:0; color:#2c3e50;">Scan to Pay: ₹<span id="qrDisplayAmt">0</span></h4>
+        <img id="qrImg" src="" style="width:220px; height:220px; border: 1px solid #eee; border-radius: 10px; padding: 10px;">
         <button class="btn logout" onclick="document.getElementById('qrModal').style.display='none'">Close</button>
     </div>
 </div>
 
 <nav class="navbar">
-    <a href="#" class="active">Billing</a>
-    <a href="#">Reports</a>
-    <a href="#">History</a>
-    <a href="#" class="logout" onclick="logout()">Exit</a>
+    <div class="nav-container">
+        <div class="nav-branding">
+            <img src="logo.png" class="nav-logo" alt="logo">
+            <span class="shop-name">DHANUSHYA MATERIAL SHOP</span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="active">Billing</a>
+            <a href="#">Reports</a>
+            <a href="#">History</a>
+            <a href="#" class="logout" onclick="logout()">Exit</a>
+        </div>
+    </div>
 </nav>
 
 <div class="container">
@@ -91,11 +229,11 @@
         <div class="billing-info-header">
             <div class="info-item">
                 <span class="label">Progress:</span>
-                <span id="dayDisplay" class="value" style="color: #27ae60;">Day 1</span>
+                <span id="dayDisplay" class="value" style="color: #27ae60;">Day 2</span>
             </div>
             <div class="info-item">
                 <span class="label">Date:</span>
-                <span id="displayDate" class="value"></span>
+                <span id="displayDate" class="value">5/4/2026</span>
             </div>
             <div class="info-item">
                 <span class="label">Total Bill:</span>
@@ -108,16 +246,16 @@
         </div>
 
         <div class="header-row">
-            <div>Live Status:</div>
-            <div id="liveClock" style="color: #e74c3c;"></div>
+            <div>Live Billing Status:</div>
+            <div id="liveClock" style="color: #e74c3c; font-family: monospace; font-size: 15px;"></div>
         </div>
         
         <div id="itemList">
             <div class="item-row">
-                <div><label>Item</label><input type="text" class="item-name" placeholder="Name"></div>
-                <div><label>Qty</label><input type="number" class="item-qty" value="1" oninput="calc(this)"></div>
-                <div><label>Rate</label><input type="number" class="item-rate" oninput="calc(this)"></div>
-                <div><label>Total</label><input type="number" class="item-total" readonly></div>
+                <div><label>Item Description</label><input type="text" class="item-name" placeholder="Item Name"></div>
+                <div><label>Quantity</label><input type="number" class="item-qty" value="1" oninput="calc(this)"></div>
+                <div><label>Rate (₹)</label><input type="number" class="item-rate" placeholder="0" oninput="calc(this)"></div>
+                <div><label>Subtotal</label><input type="number" class="item-total" readonly style="background:#f8f9fa;"></div>
             </div>
         </div>
 
@@ -126,13 +264,13 @@
         <div class="total-section">Grand Total: ₹<span id="grandTotal">0</span></div>
 
         <div class="calc-box">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div>
-                    <label>Received Amount</label>
-                    <input type="number" id="receivedAmt" placeholder="0" oninput="calculateBalance()">
+                    <label>Amount Received</label>
+                    <input type="number" id="receivedAmt" placeholder="0" oninput="calculateBalance()" style="font-size: 16px; font-weight: bold; color: #27ae60;">
                 </div>
                 <div>
-                    <label>Remaining Balance</label>
+                    <label>Change/Balance</label>
                     <div id="balanceAmt" class="balance-text">₹0</div>
                 </div>
             </div>
@@ -147,7 +285,7 @@
                 <label>📱 G-Pay Recorded</label>
                 <div style="display:flex; gap:5px;">
                     <input type="number" id="gpayAmt" placeholder="0" oninput="validatePayment()">
-                    <button onclick="generateQR()" style="background:#6c5ce7; color:white; border:none; border-radius:6px; padding:0 8px;">QR</button>
+                    <button onclick="generateQR()" style="background:#6c5ce7; color:white; border:none; border-radius:8px; padding:0 12px; cursor:pointer;">QR</button>
                 </div>
             </div>
         </div>
@@ -185,7 +323,6 @@
         document.getElementById('dailyBillNo').innerText = localStorage.getItem('daily_bill_count') || 1;
     }
 
-    // UPDATED: Start Session now tells Google Sheets to fill B2 and H2 immediately
     function startSession() {
         const timeInput = document.getElementById('morningTime').value;
         const startBtn = document.getElementById('startDayBtn');
@@ -260,7 +397,7 @@
         try {
             const resp = await fetch(SCRIPT_URL + "?action=getLastBill");
             const val = await resp.text();
-            document.getElementById('totalBillNo').innerText = parseInt(val) + 1;
+            document.getElementById('totalBillNo').innerText = (parseInt(val) || 0) + 1;
         } catch(e) {
             document.getElementById('totalBillNo').innerText = "Err";
         }
@@ -320,7 +457,7 @@
 
     function generateQR() {
         const amount = document.getElementById('gpayAmt').value;
-        const upiID = "YOUR_UPI_ID@okicici"; 
+        const upiID = "8248699172@postbank"; 
         if (amount > 0) {
             const upiString = `upi://pay?pa=${upiID}&pn=Dhanushya%20Shop&am=${amount}&cu=INR`;
             document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
