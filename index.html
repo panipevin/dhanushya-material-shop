@@ -82,6 +82,7 @@
         .btn-calc { background: #6c5ce7; color: white; padding: 10px 15px; border-radius: 8px; width: auto; font-size: 13px; cursor: pointer; font-weight: bold; border:none; }
         .total-section { text-align: right; font-weight: 900; color: #d35400; font-size: 1.4em; margin: 0; }
         
+        /* Calculator Overlay Style */
         #reportOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #f0f4f7; display: none; flex-direction: column; z-index: 2500;
@@ -114,6 +115,11 @@
 
         #sessionLock { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.96); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .lock-box { background: white; padding: 40px 30px; border-radius: 16px; text-align: center; width: 85%; max-width: 320px; }
+        
+        /* Change/Return UI */
+        .calc-box { background: #f0f7ff; padding: 15px; border-radius: 12px; border: 1px solid #d6e9f9; margin-bottom: 20px; }
+        .balance-text { font-size: 1.3em; font-weight: 900; padding-top: 10px; }
+
         .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
         .payment-box { background: #ffffff; padding: 12px; border-radius: 10px; border: 1px solid #e9ecef; }
         label { font-size: 11px; color: #7f8c8d; font-weight: bold; display: block; margin-bottom: 6px; }
@@ -131,7 +137,7 @@
 <div id="sessionLock" style="display:none;">
     <div class="lock-box">
         <h2 style="margin: 0; color: #2c3e50; font-size: 20px;">SHOP OPENING</h2>
-        <p style="margin-top: 5px; font-size: 13px; color: #7f8c8d;">Day 24 Progress</p>
+        <p id="lockProgressText" style="margin-top: 5px; font-size: 13px; color: #7f8c8d;">Day -- Progress</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
         <label>SELECT ENTRY TIME</label>
         <input type="time" id="morningTime" style="text-align: center; font-size: 16px;">
@@ -216,7 +222,7 @@
 <div class="container">
     <div class="card">
         <div class="billing-info-header">
-            <div class="info-item"><span class="label">Progress:</span><span id="dayDisplay" class="value" style="color: #27ae60;">Day 24</span></div>
+            <div class="info-item"><span class="label">Progress:</span><span id="dayDisplay" class="value" style="color: #27ae60;">Day --</span></div>
             <div class="info-item"><span class="label">Date:</span><span id="displayDate" class="value">...</span></div>
             <div class="info-item"><span class="label">Total Bill:</span><span id="totalBillNo" class="value">...</span></div>
             <div class="info-item"><span class="label">Curr Bill:</span><span id="dailyBillNo" class="value">1</span></div>
@@ -236,6 +242,20 @@
         <div class="total-area">
             <button class="btn-calc" onclick="openCalc()">📏 CALC</button>
             <div class="total-section">Grand Total: ₹<span id="grandTotal">0</span></div>
+        </div>
+
+        <!-- RESTORED: Change/Return UI -->
+        <div class="calc-box">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label>Amount Received</label>
+                    <input type="number" id="receivedAmt" placeholder="0" oninput="calculateBalance()" style="font-size: 16px; font-weight: bold; color: #27ae60;">
+                </div>
+                <div>
+                    <label>Change/Return</label>
+                    <div id="balanceAmt" class="balance-text">₹0</div>
+                </div>
+            </div>
         </div>
 
         <div class="payment-grid">
@@ -325,7 +345,11 @@
     function updateDayCount() { 
         const start = new Date(2026, 3, 13); 
         const today = new Date(); 
-        document.getElementById('dayDisplay').innerText = "Day " + (Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1); 
+        const count = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('dayDisplay').innerText = "Day " + count;
+        if(document.getElementById('lockProgressText')) {
+            document.getElementById('lockProgressText').innerText = "Day " + count + " Progress";
+        }
     }
     
     function startClock() { 
@@ -340,6 +364,7 @@
         
         if (!localStorage.getItem('shop_entry_time')) { 
             lock.style.display = 'flex'; 
+            updateDayCount(); // Ensure Day X is accurate on lock screen
             
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
@@ -393,8 +418,45 @@
     
     async function fetchTotalBillNo() { const resp = await fetch(SCRIPT_URL + "?action=getLastBill"); const val = await resp.text(); document.getElementById('totalBillNo').innerText = (parseInt(val) || 0) + 1; }
     function addRow() { const list = document.getElementById('itemList'); const newRow = list.firstElementChild.cloneNode(true); newRow.querySelectorAll('input').forEach(i => i.value = (i.className === 'item-qty' ? 1 : '')); list.appendChild(newRow); }
-    function calc(el) { const row = el.closest('.item-row'); const q = parseFloat(row.querySelector('.item-qty').value) || 0; const r = parseFloat(row.querySelector('.item-rate').value) || 0; row.querySelector('.item-total').value = (q * r).toFixed(2); let rawTotal = 0; document.querySelectorAll('.item-total').forEach(t => rawTotal += parseFloat(t.value || 0)); document.getElementById('grandTotal').innerText = Math.ceil(rawTotal); validatePayment(); }
-    function validatePayment() { const grand = parseFloat(document.getElementById('grandTotal').innerText) || 0; const cash = parseFloat(document.getElementById('cashAmt').value) || 0; const gpay = parseFloat(document.getElementById('gpayAmt').value) || 0; const btn = document.getElementById('submitBtn'); if (Math.abs((cash + gpay) - grand) > 0.01) { btn.disabled = true; btn.style.background = "#95a5a6"; } else { btn.disabled = false; btn.style.background = "#3498db"; } }
+    
+    function calc(el) { 
+        const row = el.closest('.item-row'); 
+        const q = parseFloat(row.querySelector('.item-qty').value) || 0; 
+        const r = parseFloat(row.querySelector('.item-rate').value) || 0; 
+        row.querySelector('.item-total').value = (q * r).toFixed(2); 
+        let rawTotal = 0; 
+        document.querySelectorAll('.item-total').forEach(t => rawTotal += parseFloat(t.value || 0)); 
+        document.getElementById('grandTotal').innerText = Math.ceil(rawTotal); 
+        calculateBalance();
+        validatePayment(); 
+    }
+
+    // RESTORED: Balance/Return Function
+    function calculateBalance() {
+        const total = parseFloat(document.getElementById('grandTotal').innerText) || 0;
+        const received = parseFloat(document.getElementById('receivedAmt').value) || 0;
+        const balance = received - total; // Received - Total = what you give back
+        const balEl = document.getElementById('balanceAmt');
+        balEl.innerText = "₹" + balance.toFixed(0);
+
+        if (balance < 0) { balEl.style.color = "#e74c3c"; } 
+        else { balEl.style.color = "#27ae60"; } 
+    }
+
+    function validatePayment() { 
+        const grand = parseFloat(document.getElementById('grandTotal').innerText) || 0; 
+        const cash = parseFloat(document.getElementById('cashAmt').value) || 0; 
+        const gpay = parseFloat(document.getElementById('gpayAmt').value) || 0; 
+        const btn = document.getElementById('submitBtn'); 
+        if (Math.abs((cash + gpay) - grand) > 0.01) { 
+            btn.disabled = true; 
+            btn.style.background = "#95a5a6"; 
+        } else { 
+            btn.disabled = false; 
+            btn.style.background = "#3498db"; 
+        } 
+    }
+    
     function submitToSheet() { const btn = document.getElementById('submitBtn'); btn.disabled = true; const items = []; document.querySelectorAll('.item-row').forEach(row => { const name = row.querySelector('.item-name').value; if (name) { items.push({ name: name, qty: row.querySelector('.item-qty').value, rate: row.querySelector('.item-rate').value, total: row.querySelector('.item-total').value }); } }); const payload = { items: items, cash: document.getElementById('cashAmt').value || 0, gpay: document.getElementById('gpayAmt').value || 0, entryTime: localStorage.getItem('shop_entry_time') }; fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) }).then(() => { let currentDaily = parseInt(localStorage.getItem('daily_bill_count')) || 1; localStorage.setItem('daily_bill_count', currentDaily + 1); location.reload(); }); }
 </script>
 </body>
